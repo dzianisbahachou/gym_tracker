@@ -1,2 +1,7 @@
-# gym_tracker
-Welcome to the Gym Tracker!
+# React + Vite
+
+Hi there! This is my pet project based on React!
+
+App is just about my hobby! About Gym!
+
+So, Welcome to the Gym Tracker!

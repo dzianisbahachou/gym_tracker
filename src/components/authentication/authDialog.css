@@ -1,0 +1,17 @@
+.signup-help { 
+    font-size: 14px;
+    text-align: start;
+    margin-top: 1em;
+}
+
+.signup-help-button {
+    color: blue;
+}
+
+.signup-help-button:hover {
+    cursor: pointer;
+}
+
+.signup-help-align { 
+    display: inline;
+}
