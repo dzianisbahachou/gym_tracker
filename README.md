@@ -1,4 +1,4 @@
-# React + Vite
+# Gym Tracker
 
 Hi there! This is my pet project based on React!
 
