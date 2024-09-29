@@ -1,7 +1,8 @@
+import React from 'react'
 import Drawer from '@mui/material/Drawer'
 import { SideBarList } from './SideBarList'
 
-export const SideBarPermanent = () => {
+export const SideBarPermanent = React.memo(() => {
 	return (
 		<Drawer
 			variant='persistent'
@@ -21,4 +22,4 @@ export const SideBarPermanent = () => {
 			<SideBarList />
 		</Drawer>
 	)
-}
+})

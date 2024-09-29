@@ -1,3 +1,4 @@
+import React from 'react'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
@@ -7,7 +8,7 @@ import InboxIcon from '@mui/icons-material/MoveToInbox'
 import MailIcon from '@mui/icons-material/Mail'
 import { useNavigate } from 'react-router-dom'
 
-export const SideBarList = () => {
+export const SideBarList = React.memo(() => {
 	const navigate = useNavigate()
 
 	const list = ['Home', 'Calendar', 'Trainings', 'Goals']
@@ -31,4 +32,4 @@ export const SideBarList = () => {
 			))}
 		</List>
 	)
-}
+})
