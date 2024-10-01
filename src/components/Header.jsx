@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useContext } from 'react'
 import { Button } from '@mui/material'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
@@ -11,21 +11,22 @@ import MenuIcon from '@mui/icons-material/Menu'
 import { useState } from 'react'
 import { AuthDialog } from './authentication/AuthDialog'
 import { APP_TITLE } from '../utils/commonConstants'
+import { AuthContext } from '../context/auth-context'
+import { AvatarMenu } from './AvatarMenu'
 
 export const Header = React.memo(() => {
 	const [showSidebar, setShowSidebar] = useState(false)
 	const [showAuthDialog, setShowAuthDialog] = useState(false)
 
-	const showSidebarHandler = showSidebar => {
-		setShowSidebar(showSidebar)
+	const { isLoggedIn } = useContext(AuthContext)
+
+	const showSidebarHandler = () => {
+		setShowSidebar(prev => !prev)
 	}
 
-	const showAuthDialogHandler = useCallback(
-		showAuthDialog => {
-			setShowAuthDialog(showAuthDialog)
-		},
-		[showAuthDialog]
-	)
+	const showAuthDialogHandler = useCallback(() => {
+		setShowAuthDialog(prev => !prev)
+	}, [showAuthDialog])
 
 	return (
 		<>
@@ -35,13 +36,16 @@ export const Header = React.memo(() => {
 						<IconButton size='large' edge='start' color='inherit' aria-label='menu' sx={{ mr: 1, display: { xs: 'none', lg: 'block' } }}>
 							<FitnessCenterIcon />
 						</IconButton>
-						<MenuIcon sx={{ mr: 1, display: { xs: 'block', lg: 'none' } }} onClick={() => showSidebarHandler(true)} />
+						<MenuIcon sx={{ mr: 1, display: { xs: 'block', lg: 'none' } }} onClick={showSidebarHandler} />
 						<Typography variant='h6' component='div' sx={{ ml: 3, flexGrow: 1 }}>
 							{APP_TITLE}
 						</Typography>
-						<Button color='inherit' onClick={() => showAuthDialogHandler(true)}>
-							Login
-						</Button>
+						{!isLoggedIn && (
+							<Button color='inherit' onClick={showAuthDialogHandler}>
+								Login
+							</Button>
+						)}
+						{isLoggedIn && <AvatarMenu />}
 					</Toolbar>
 				</AppBar>
 			</Box>

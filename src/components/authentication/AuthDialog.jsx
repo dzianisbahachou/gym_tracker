@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { AlertTitle, Button, CircularProgress, Collapse, Container, Dialog, DialogTitle, TextField } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import Alert from '@mui/material/Alert'
@@ -24,13 +24,17 @@ import {
 	USER_CREDENTIALS_ERROR,
 } from '../../utils/authUtil'
 import './authDialog.css'
+import { UserInput } from '../UserInput'
+import { AuthContext } from '../../context/auth-context'
 
 export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog }) => {
 	const [userCredentials, setUserCredentials] = useState(USER_CREDENTIALS)
 	const [userCredentialsError, setUserCredentialsError] = useState(USER_CREDENTIALS_ERROR)
-	const [authType, setAuthType] = useState(LOGIN)
+	const [isLoginType, setIsLoginType] = useState(true)
 	const [loading, setLoading] = useState(false)
 	const [toast, setToast] = useState(TOAST_TYPE)
+
+	const { setItem } = useContext(AuthContext)
 
 	const emailHandler = () => {
 		const emailValidity = emailValidator(userCredentials.email)
@@ -50,17 +54,17 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 		setToast(prev => ({ ...prev, error: null }))
 	}
 
-	const authDialogHandler = state => {
+	const authDialogHandler = () => {
 		resetState()
-		setAuthType(LOGIN)
-		showAuthDialogHandler(state)
+		setIsLoginType(true)
+		showAuthDialogHandler()
 	}
 
 	const validateForm = () => {
 		const emailValidator = emailHandler()
 		const passwordValidator = passwordHandler()
 		if (emailValidator && passwordValidator) {
-			authType === LOGIN ? login() : signup()
+			isLoginType ? login() : signup()
 		}
 	}
 
@@ -78,13 +82,14 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 			const response = await signInWithEmailAndPassword(auth, userCredentials.email, userCredentials.password)
 			const user = response.user
 			console.log('LOGIN', user)
+			const accessToken = user.accessToken
+			setItem(accessToken)
 			authDialogHandler()
 			showSuccessToast(LOGIN_SUCCESS_MSG)
-			setLoading(false)
 		} catch {
 			setToast(prev => ({ ...prev, error: LOGIN_ERROR }))
-			setLoading(false)
 		}
+		setLoading(false)
 	}
 
 	const signup = async () => {
@@ -102,51 +107,21 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 		setLoading(false)
 	}
 
-	const authTypeHandler = type => {
-		setAuthType(type)
+	const authTypeHandler = () => {
+		setIsLoginType(prev => !prev)
 		resetState()
 	}
 
-	const userInputRef = useCallback(
-		name => {
-			const placeholder = name.charAt(0).toUpperCase() + name.slice(1)
-			let helperText = ''
-			if (name === 'email' && userCredentialsError.email) {
-				helperText = `Fill the correct ${placeholder}`
-			} else if (name === 'password' && userCredentialsError.password) {
-				helperText = `Fill the correct ${placeholder}`
-			} else {
-				helperText = null
-			}
-			return (
-				<TextField
-					disabled={loading}
-					value={name === 'email' ? userCredentials.email || '' : userCredentials.password || ''}
-					type={name}
-					onChange={inputChangeHandler}
-					name={name}
-					helperText={helperText}
-					variant='standard'
-					error={name === 'email' ? userCredentialsError.email : userCredentialsError.password}
-					label={placeholder}
-					sx={{
-						width: '100%',
-						margin: '.5em 0',
-					}}
-				/>
-			)
+	const inputChangeHandler = useCallback(
+		(name, value) => {
+			setUserCredentials({ ...userCredentials, [name]: value })
 		},
-		[userCredentials, userCredentialsError, loading]
+		[userCredentials]
 	)
-
-	const inputChangeHandler = event => {
-		const { name, value } = event.target
-		setUserCredentials({ ...userCredentials, [name]: value })
-	}
 
 	return (
 		<>
-			<Collapse in={toast.success}>
+			<Collapse in={!!toast.success}>
 				<Alert
 					sx={{
 						position: 'absolute',
@@ -162,7 +137,7 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 			</Collapse>
 			<Dialog
 				open={showAuthDialog}
-				onClose={() => authDialogHandler(false)}
+				onClose={authDialogHandler}
 				sx={{
 					'& .MuiPaper-root': {
 						width: '25em',
@@ -189,7 +164,7 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 						sx={{
 							margin: '.5em 0.5em 0 .5em',
 						}}
-						onClick={() => authDialogHandler(false)}
+						onClick={authDialogHandler}
 					/>
 				</div>
 				<Container sx={{ width: '20em', padding: 0 }}>
@@ -199,7 +174,7 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 							padding: '0',
 						}}
 					>
-						{authType}
+						{isLoginType ? LOGIN : SIGNUP}
 					</DialogTitle>
 
 					{toast.error && (
@@ -214,22 +189,37 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 						</Alert>
 					)}
 
-					{userInputRef('email')}
-					{userInputRef('password')}
+					<UserInput
+						name='email'
+						type='email'
+						inputValue={userCredentials.email}
+						inputError={userCredentialsError.email}
+						disabled={loading}
+						inputChangeHandler={inputChangeHandler}
+					/>
+
+					<UserInput
+						name='password'
+						type='password'
+						inputValue={userCredentials.password}
+						inputError={userCredentialsError.password}
+						disabled={loading}
+						inputChangeHandler={inputChangeHandler}
+					/>
 
 					<div className='signup-help'>
-						{authType === LOGIN && (
+						{isLoginType && (
 							<div className='signup-help-align'>
 								{SIGNUP_HELP_TEXT}
-								<div className='signup-help-button signup-help-align' onClick={() => authTypeHandler(SIGNUP)}>
+								<div className='signup-help-button signup-help-align' onClick={authTypeHandler}>
 									{SIGNUP_LABEL}
 								</div>
 							</div>
 						)}
-						{authType === SIGNUP && (
+						{!isLoginType && (
 							<div className='signup-help-align'>
 								{LOGIN_HELP_TEXT}
-								<div className='signup-help-button signup-help-align' onClick={() => authTypeHandler(LOGIN)}>
+								<div className='signup-help-button signup-help-align' onClick={authTypeHandler}>
 									{LOGIN_LABEL}
 								</div>
 							</div>
@@ -245,7 +235,7 @@ export const AuthDialog = React.memo(({ showAuthDialogHandler, showAuthDialog })
 						}}
 						onClick={validateForm}
 					>
-						{authType === LOGIN ? LOGIN_LABEL : SIGNUP_LABEL}
+						{isLoginType ? LOGIN_LABEL : SIGNUP_LABEL}
 					</Button>
 				</Container>
 			</Dialog>
